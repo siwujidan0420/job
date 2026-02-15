@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>致：Dear 宿</title>
+    <style>
+        :root { --accent: #ffd1dc; --text-sub: #e0e7ff; }
+        body { margin: 0; background: #1a0b15; height: 100vh; overflow: hidden; font-family: "PingFang SC", "Songti SC", sans-serif; transition: background 2s ease; cursor: pointer; }
+        canvas { position: absolute; top: 0; left: 0; z-index: 1; pointer-events: none; }
+        
+        .page { position: absolute; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; color: #fefefe; transition: all 1.2s ease; z-index: 10; pointer-events: none; opacity: 0; transform: scale(0.96); }
+        .active { opacity: 1; transform: scale(1); }
+
+        h1 { font-size: 1.8rem; letter-spacing: 4px; text-shadow: 0 0 20px rgba(255,209,220,0.4); margin-bottom: 30px; color: var(--accent); font-weight: 300; }
+        .wish-text { 
+            font-size: 1.05rem; line-height: 2.4; color: rgba(255,255,255,0.85); 
+            padding: 0 40px; max-width: 600px; font-weight: 300; letter-spacing: 1.5px;
+        }
+        .highlight { color: var(--accent); font-weight: 500; border-bottom: 1px solid rgba(255,209,220,0.3); padding-bottom: 2px; }
+
+        .guide-hint { position: fixed; top: 75%; color: var(--accent); font-size: 0.8rem; letter-spacing: 3px; animation: breathe 4s infinite; z-index: 15; pointer-events: none; opacity: 0.6; }
+        #nextBtn { position: fixed; bottom: 50px; right: 50px; z-index: 100; padding: 12px 30px; border: 1px solid rgba(255,209,220,0.4); background: rgba(0,0,0,0.2); color: var(--accent); border-radius: 30px; cursor: pointer; font-size: 0.85rem; backdrop-filter: blur(5px); pointer-events: auto; transition: all 0.5s; }
+        #nextBtn:hover { background: var(--accent); color: #1a0b15; border-color: var(--accent); }
+        .pop-text { position: fixed; z-index: 100; pointer-events: none; color: var(--accent); font-size: 0.95rem; animation: floatUp 4s ease-out forwards; text-shadow: 0 0 5px rgba(255,209,220,0.3); font-family: "KaiTi", serif; }
+        
+        @keyframes breathe { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.8; } }
+        @keyframes floatUp { 0% { opacity: 0; transform: translateY(0); } 20% { opacity: 0.9; transform: translateY(-30px); } 100% { opacity: 0; transform: translateY(-140px); } }
+    </style>
+</head>
+<body onclick="handleInteraction(event)">
+    
+    <audio id="bgm" loop><source src="bgm.mp3" type="audio/mpeg"></audio>
+
+    <canvas id="canvas"></canvas>
+    <div id="hintText" class="guide-hint">轻触回忆，解封书信</div>
+
+    <div id="page1" class="page active">
+        <h1>致：Dear 宿</h1>
+        <div class="wish-text">
+            在这个辞旧迎新的节点，<br>
+            周围的喧嚣越热闹，我心底的声音反而越清晰。<br>
+            想起往昔的无数个新年，<br>
+            愿你新的一岁，<br>
+            眉目舒展，顺问冬安。<br>
+            <span class="highlight">这是祝福，也是我想你的开场白。</span>
+        </div>
+    </div>
+
+    <div id="page2" class="page">
+        <h1>那两年</h1>
+        <div class="wish-text">
+            有时候我会恍惚，觉得高中走廊的风还在吹。<br>
+            那两年的时光，不仅仅是青春的代名词，<br>
+            更是我关于“美好”二字最初的定义。<br>
+            无论走了多远的路，<br>
+            <span class="highlight">你依然是我回望时，最亮的那盏灯。</span>
+        </div>
+    </div>
+
+    <div id="page3" class="page">
+        <h1>羁绊</h1>
+        <div class="wish-text">
+            大学这几年，我们像两颗行星，<br>
+            时而靠近，时而远离，却始终没能彻底脱离引力。<br>
+            那种断断续续的拉扯，<br>
+            或许不是因为不合适，<br>
+            而是因为<span class="highlight">命运不舍得让我们就这样写下句号。</span>
+        </div>
+    </div>
+
+    <div id="page4" class="page">
+        <h1>见面吧</h1>
+        <div class="wish-text">
+            七月，我即将奔赴远洋，去往地图上的深蓝。<br>
+            但在那之前，在这个春天，<br>
+            我想见你一面。<br>
+            不为别的，只为看看记忆里的那双眼睛，<br>
+            <span class="highlight">是否还藏着属于我的那个答案。</span>
+        </div>
+    </div>
+
+    <div id="page5" class="page">
+        <h1>归途</h1>
+        <div class="wish-text">
+            人们都说，大雁南飞是为了归巢。<br>
+            我也一样。<br>
+            无论我即将去往哪片海域，<br>
+            如果你愿意，<br>
+            <span class="highlight">你就是我航行万里的，唯一港湾。</span>
+        </div>
+    </div>
+
+    <button id="nextBtn" onclick="nextPage(event)">翻阅下一页</button>
+
+    <script>
+        const canvas = document.getElementById('canvas'), ctx = canvas.getContext('2d');
+        let particles = [], isMusicPlaying = false, currentPage = 1;
+        
+        // 这里的称呼也同步更新了
+        const phrases = [
+            "好久不见，宿", 
+            "其实，我一直都在", 
+            "那些年，多谢指教", 
+            "想你了，不止今天", 
+            "如果你回头...", 
+            "未完待续的故事", 
+            "2026，重新开始好吗？",
+            "你在心上，别来无恙"
+        ];
+
+        const themes = [
+            {bg:'#1a0b15',c:['#ffccd5','#ffffff','#e0e7ff']}, 
+            {bg:'#151020',c:['#e0e7ff','#ffccd5','#ffffff']}, 
+            {bg:'#0f172a',c:['#93f5ff','#e0e7ff','#ffffff']}, 
+            {bg:'#2d1b2e',c:['#ffccd5','#ffd1dc','#ffffff']}, 
+            {bg:'#000000',c:['#ffd700','#ffffff','#ff69b4']}
+        ];
+
+        function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
+        window.addEventListener('resize',resize);resize();
+
+        class P {
+            constructor(x,y,c,v){this.x=x;this.y=y;this.c=c;this.v=v;this.a=1;}
+            draw(){ctx.save();ctx.globalAlpha=this.a;ctx.beginPath();ctx.arc(this.x,this.y,1.5,0,Math.PI*2);ctx.fillStyle=this.c;ctx.fill();ctx.restore();}
+            update(){this.v.x*=0.96;this.v.y*=0.96;this.v.y+=0.08;this.x+=this.v.x;this.y+=this.v.y;this.a-=0.012;}
+        }
+
+        function createFirework(x, y) {
+            for (let i = 0; i < 40; i++) { 
+                const ang = (Math.PI * 2 / 40) * i, spd = Math.random() * 5 + 2;
+                particles.push(new P(x, y, themes[currentPage-1].c[Math.floor(Math.random()*3)], {x: Math.cos(ang) * spd, y: Math.sin(ang) * spd}));
+            }
+        }
+
+        function handleInteraction(e) {
+            if (e.target.tagName === 'BUTTON') return;
+            if (!isMusicPlaying) { 
+                document.getElementById('bgm').play().catch(()=>{}); 
+                isMusicPlaying = true; 
+                document.getElementById('hintText').style.display = 'none'; 
+            }
+            createFirework(e.clientX, e.clientY);
+            if (Math.random() > 0.4) { 
+                const t = document.createElement('div'); t.className = 'pop-text';
+                t.style.left = e.clientX + 'px'; t.style.top = e.clientY + 'px';
+                t.textContent = phrases[Math.floor(Math.random() * phrases.length)];
+                document.body.appendChild(t); setTimeout(() => t.remove(), 4000); 
+            }
+        }
+
+        function autoFire() {
+            createFirework(Math.random() * canvas.width, Math.random() * canvas.height * 0.8);
+            setTimeout(autoFire, Math.random() * 2000 + 1500);
+        }
+        autoFire();
+
+        function nextPage(e) {
+            e.stopPropagation();
+            currentPage = currentPage < 5 ? currentPage + 1 : 1;
+            document.querySelectorAll('.page').forEach((p,i)=>p.className=i===currentPage-1?'page active':'page');
+            document.body.style.background = themes[currentPage-1].bg;
+            document.getElementById('nextBtn').textContent = currentPage === 5 ? '回到最初' : '翻阅下一页';
+        }
+
+        function animate() {
+            ctx.fillStyle = themes[currentPage-1].bg + '22'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((p, i) => { if (p.a > 0) { p.update(); p.draw(); } else particles.splice(i, 1); });
+            requestAnimationFrame(animate);
+        }
+        animate();
+    </script>
+</body>
+</html>
